@@ -25,7 +25,7 @@ final class LocalLockdownPairing: ObservableObject {
 
     private init() {}
 
-    static var hostID: String {
+    nonisolated static var hostID: String {
         if let value = UserDefaults.standard.string(forKey: hostIDKey), !value.isEmpty {
             return value
         }
@@ -34,7 +34,7 @@ final class LocalLockdownPairing: ObservableObject {
         return value
     }
 
-    static var systemBUID: String {
+    nonisolated static var systemBUID: String {
         if let value = UserDefaults.standard.string(forKey: systemBUIDKey), !value.isEmpty {
             return value
         }
@@ -99,7 +99,7 @@ final class LocalLockdownPairing: ObservableObject {
         }
     }
 
-    private static func ffiMessage(_ error: UnsafeMutablePointer<IdeviceFfiError>?,
+    nonisolated private static func ffiMessage(_ error: UnsafeMutablePointer<IdeviceFfiError>?,
                                    fallback: String) -> String? {
         guard let error else { return nil }
         let code = error.pointee.code
@@ -109,14 +109,14 @@ final class LocalLockdownPairing: ObservableObject {
         return "idevice FFI (code)/(sub): (message)"
     }
 
-    private static func check(_ error: UnsafeMutablePointer<IdeviceFfiError>?,
+    nonisolated private static func check(_ error: UnsafeMutablePointer<IdeviceFfiError>?,
                               fallback: String) throws {
         if let message = ffiMessage(error, fallback: fallback) {
             throw PairError.ffi(message)
         }
     }
 
-    private static func perform(deviceIP: String) throws -> PairResult {
+    nonisolated private static func perform(deviceIP: String) throws -> PairResult {
         let hosts = [deviceIP, "127.0.0.1"]
         var lastError: Error?
 
@@ -131,7 +131,7 @@ final class LocalLockdownPairing: ObservableObject {
         throw lastError ?? PairError.ffi("No Lockdown address could be reached.")
     }
 
-    private static func pair(host: String) throws -> PairResult {
+    nonisolated private static func pair(host: String) throws -> PairResult {
         var address = sockaddr_in()
         address.sin_family = sa_family_t(AF_INET)
         address.sin_port = UInt16(62078).bigEndian
@@ -221,5 +221,5 @@ final class LocalLockdownPairing: ObservableObject {
         return PairResult(path: url.path, bytes: data.count)
     }
 
-    private static let hostName = "AirCard-iOS"
+    nonisolated private static let hostName = "AirCard-iOS"
 }
