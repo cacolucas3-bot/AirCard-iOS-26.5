@@ -48,5 +48,5 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mak5er.aircard.issuer-provisioning
-        INFOPLIST_FILE: ios-app/IssuerProvisioning/Info.plist
+        INFOPLIST_FILE: IssuerProvisioning/Info.plist
         GENERATE_INFOPLIST_FILE: NO
