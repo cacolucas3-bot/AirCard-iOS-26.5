@@ -9,9 +9,9 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::ptr;
 
 use idevice::remote_pairing::{
-    PairableHost, PairableHostInfo, RpPairingFile, RpPairingSocket,
+    PairableHost, PairableHostInfo, RemotePairingClient, RpPairingFile, RpPairingSocket,
 };
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
 
 use crate::ffi_util::{cstr, opt_str};
 
@@ -220,6 +220,34 @@ async fn async_run_host(
         out_path,
         bytes_to_hex(&host_alt_irk),
     ))
+}
+
+// ---------------------------------------------------------------------------
+// Local RPPairing diagnostic (does not perform pair-setup)
+
+pub unsafe fn diagnose_local(host: *const c_char, port: u16, out_message: *mut *mut c_char) -> i32 {
+    if out_message.is_null() { return 2; }
+    *out_message = ptr::null_mut();
+    let host = opt_str(host, "127.0.0.1");
+    let result = crate::ffi_util::run_with_large_stack("al_pairing_diagnose_local", move || {
+        idevice_ffi::run_sync_local(async move {
+            let addr = format!("{host}:{port}");
+            tracing::info!("RPPairing diagnostic: connecting to {addr}");
+            let stream = tokio::time::timeout(std::time::Duration::from_secs(3), TcpStream::connect(&addr))
+                .await.map_err(|_| format!("connection to {addr} timed out"))?
+                .map_err(|e| format!("connection to {addr} failed: {e}"))?;
+            let socket = RpPairingSocket::new(stream);
+            let mut client = RemotePairingClient::new(socket, "AirCard-iOS");
+            client.attempt_pair_verify().await
+                .map_err(|e| format!("attemptPairVerify failed: {e:?}"))?;
+            Ok::<String, String>(format!("RPPairing probe succeeded on {addr}; pair-setup was not attempted."))
+        })
+    });
+    match result {
+        Ok(Ok(message)) => { *out_message = cstr(message); 0 }
+        Ok(Err(message)) => { *out_message = cstr(message); 1 }
+        Err(panic_msg) => { *out_message = cstr(format!("RPPairing diagnostic panic: {panic_msg}")); 1 }
+    }
 }
 
 // ---------------------------------------------------------------------------
