@@ -22,7 +22,12 @@ targets:
     platform: iOS
     sources:
       - path: ios-app
+        excludes:
+          - IssuerProvisioning/**
     dependencies:
+      - target: AirCard-IssuerProvisioning
+        embed: true
+        codeSign: false
       - framework: AirliftFFI.xcframework
         embed: false
     settings:
@@ -33,4 +38,17 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         # idevice's static lib pulls in C++ symbols (aws-lc); link libc++.
         OTHER_LDFLAGS: "-lc++"
+        GENERATE_INFOPLIST_FILE: NO
+
+  AirCard-IssuerProvisioning:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ios-app/IssuerProvisioning
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mak5er.aircard.issuer-provisioning
+        INFOPLIST_FILE: ios-app/IssuerProvisioning/Info.plist
         GENERATE_INFOPLIST_FILE: NO
