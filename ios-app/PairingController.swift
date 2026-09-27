@@ -19,7 +19,10 @@ final class PairingController: ObservableObject {
 
     @Published private(set) var running = false
     @Published var pairingStatus: String = "idle"
-    @Published var pairingPIN: String? = nil\n    @Published var pairingDiagnostic: String? = nil\n\n    private var advertisedPort: Int32? = nil
+    @Published var pairingPIN: String? = nil
+    @Published var pairingDiagnostic: String? = nil
+
+    private var advertisedPort: Int32? = nil
 
     /// Path to the pairing file that was actively found or created.
     static var customPairingFilePath: String? = nil
