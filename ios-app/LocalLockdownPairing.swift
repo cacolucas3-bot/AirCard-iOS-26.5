@@ -20,8 +20,8 @@ final class LocalLockdownPairing: ObservableObject {
     @Published private(set) var log: [String] = []
     @Published private(set) var pairingFilePath: String?
 
-    private static let hostIDKey = "aircardLockdownHostID"
-    private static let systemBUIDKey = "aircardLockdownSystemBUID"
+    nonisolated private static let hostIDKey = "aircardLockdownHostID"
+    nonisolated private static let systemBUIDKey = "aircardLockdownSystemBUID"
 
     private init() {}
 
@@ -144,7 +144,7 @@ final class LocalLockdownPairing: ObservableObject {
             throw PairError.ffi("Invalid IPv4 address: \(host)")
         }
 
-        var device: UnsafeMutablePointer<IdeviceHandle>?
+        var device: OpaquePointer?
         let connectError = withUnsafePointer(to: &address) { ptr in
             ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPtr in
                 Self.hostName.withCString { label in
@@ -170,7 +170,7 @@ final class LocalLockdownPairing: ObservableObject {
         }
 
         // lockdownd_new consumes the device socket.
-        var client: UnsafeMutablePointer<LockdowndClientHandle>?
+        var client: OpaquePointer?
         try check(
             lockdownd_new(device, &client),
             fallback: "lockdownd_new failed"
@@ -181,7 +181,7 @@ final class LocalLockdownPairing: ObservableObject {
         }
         defer { lockdownd_client_free(client) }
 
-        var pairingFile: UnsafeMutablePointer<IdevicePairingFile>?
+        var pairingFile: OpaquePointer?
         try Self.hostID.withCString { hostID in
             try Self.systemBUID.withCString { systemBUID in
                 try Self.hostName.withCString { hostName in
