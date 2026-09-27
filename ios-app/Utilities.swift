@@ -136,3 +136,104 @@ final class LocalNetworkAuthorization {
         listener?.cancel(); listener = nil
     }
 }
+
+
+// MARK: - LocalDevVPN TCP diagnostic
+
+/// Tests whether the app can open a TCP connection to the device endpoint
+/// through LocalDevVPN without invoking Lockdown or pairing.
+/// This is diagnostic-only and does not touch the exploit path.
+@MainActor
+final class LocalVPNTCPProbe: ObservableObject {
+    static let shared = LocalVPNTCPProbe()
+
+    @Published private(set) var running = false
+    @Published private(set) var status = "idle"
+    @Published private(set) var log: [String] = []
+
+    private var connection: NWConnection?
+    private var timeoutWork: DispatchWorkItem?
+
+    private init() {}
+
+    func test(host: String, port: UInt16 = 62078) {
+        guard !running else { return }
+
+        let trimmed = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            status = "❌ Device IP is empty."
+            return
+        }
+
+        cancelConnection()
+        running = true
+        status = "Connecting to \(trimmed):\(port)…"
+        log.removeAll()
+
+        let endpoint = NWEndpoint.Host(trimmed)
+        let connection = NWConnection(host: endpoint, port: NWEndpoint.Port(rawValue: port)!, using: .tcp)
+        self.connection = connection
+
+        connection.stateUpdateHandler = { [weak self] state in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                switch state {
+                case .ready:
+                    self.running = false
+                    self.status = "✅ TCP connection established to \(trimmed):\(port)."
+                    self.log.append("NWConnection state: ready")
+                    self.log.append("LocalDevVPN transport is reachable from AirCard.")
+                    self.cancelConnection()
+
+                case .failed(let error):
+                    self.running = false
+                    self.status = "❌ TCP connection failed."
+                    self.log.append("NWConnection state: failed")
+                    self.log.append("Error: \(error)")
+                    self.cancelConnection()
+
+                case .waiting(let error):
+                    self.log.append("NWConnection waiting: \(error)")
+
+                case .preparing:
+                    self.log.append("NWConnection preparing…")
+
+                case .setup:
+                    break
+
+                case .cancelled:
+                    break
+
+                @unknown default:
+                    self.log.append("NWConnection state: unknown")
+                }
+            }
+        }
+
+        connection.start(queue: .main)
+
+        let timeout = DispatchWorkItem { [weak self] in
+            guard let self, self.running else { return }
+            self.running = false
+            self.status = "❌ TCP connection timed out."
+            self.log.append("No TCP connection to \(trimmed):\(port) within 4 seconds.")
+            self.cancelConnection()
+        }
+        timeoutWork = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: timeout)
+    }
+
+    func cancel() {
+        running = false
+        status = "Cancelled"
+        cancelConnection()
+    }
+
+    private func cancelConnection() {
+        timeoutWork?.cancel()
+        timeoutWork = nil
+        connection?.stateUpdateHandler = nil
+        connection?.cancel()
+        connection = nil
+    }
+}
