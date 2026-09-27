@@ -1123,6 +1123,28 @@ struct WalletCardsTab: View {
                 VStack(spacing: 16) {
                     scannerBanner
 
+                    Button {
+                        vm.selectedTab = .walletArtLab
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "paintbrush.pointed.fill")
+                                .font(.title3)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Wallet Art Lab")
+                                    .font(.subheadline.bold())
+                                Text("Abrir a investigação de arte e o mockup visual")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+
                     if vm.cards.isEmpty {
                         walletEmptyState
                             .padding(.top, 40)
