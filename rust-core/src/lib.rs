@@ -72,6 +72,12 @@ pub unsafe extern "C" fn al_pairing_result_free(r: *mut ALPairResult) {
     pairing::result_free(r)
 }
 
+/// Probe the local RPPairing host without performing pair-setup.
+#[no_mangle]
+pub unsafe extern "C" fn al_pairing_diagnose_local(host: *const c_char, port: u16, out_message: *mut *mut c_char) -> i32 {
+    pairing::diagnose_local(host, port, out_message)
+}
+
 // ---------------------------------------------------------------------------
 // Exploit
 // ---------------------------------------------------------------------------
