@@ -75,6 +75,11 @@ struct WalletArtLabTab: View {
     @StateObject private var inspector = WalletArtInspector()
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var artwork: UIImage?
+    @State private var cardName = "Cartão personalizado"
+    @State private var lastFour = "1738"
+    @State private var zoom: Double = 1.0
+    @State private var offsetX: Double = 0
+    @State private var offsetY: Double = 0
 
     var body: some View {
         NavigationStack {
@@ -182,13 +187,57 @@ struct WalletArtLabTab: View {
                     }
                 }
 
-                Section("2. Testar a arte que você quer usar") {
+                Section("2. Montar a skin visual") {
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         Label(artwork == nil ? "Escolher imagem da Fototeca" : "Trocar imagem", systemImage: "photo")
                     }
 
                     if let artwork {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            TextField("Nome exibido no mockup", text: $cardName)
+                            TextField("Últimos 4 dígitos (somente visual)", text: $lastFour)
+                                .keyboardType(.numberPad)
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Zoom")
+                                    Spacer()
+                                    Text(String(format: "%.2fx", zoom))
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(.secondary)
+                                }
+                                Slider(value: $zoom, in: 1.0...2.5)
+
+                                HStack {
+                                    Text("Posição horizontal")
+                                    Spacer()
+                                    Text(String(format: "%.0f", offsetX))
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(.secondary)
+                                }
+                                Slider(value: $offsetX, in: -120...120)
+
+                                HStack {
+                                    Text("Posição vertical")
+                                    Spacer()
+                                    Text(String(format: "%.0f", offsetY))
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(.secondary)
+                                }
+                                Slider(value: $offsetY, in: -90...90)
+                            }
+
+                            Button {
+                                saveMockupToPhotos(artwork: artwork)
+                            } label: {
+                                Label("Salvar mockup na Fototeca", systemImage: "square.and.arrow.down")
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            Text("Preview — aparência visual apenas")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+
                             Text("Preview da sua skin")
                                 .font(.caption.bold())
                                 .foregroundStyle(.secondary)
@@ -197,6 +246,8 @@ struct WalletArtLabTab: View {
                                 Image(uiImage: artwork)
                                     .resizable()
                                     .scaledToFill()
+                                    .scaleEffect(zoom)
+                                    .offset(x: offsetX, y: offsetY)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 210)
                                     .clipped()
@@ -209,9 +260,9 @@ struct WalletArtLabTab: View {
 
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text("Cartão personalizado")
+                                        Text(cardName.isEmpty ? "Cartão personalizado" : cardName)
                                             .font(.headline.bold())
-                                        Text("•••• 1738")
+                                        Text("•••• " + (lastFour.isEmpty ? "0000" : String(lastFour.suffix(4))) )
                                             .font(.caption.monospaced())
                                     }
                                     .foregroundStyle(.white)
@@ -234,7 +285,7 @@ struct WalletArtLabTab: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Text("A próxima etapa é investigar apenas interfaces públicas e entitlements documentados. Em paralelo, o editor de skins continua funcionando como preview sem tocar em credenciais, NFC ou pagamentos.")
+                    Text("O editor permite criar e salvar uma representação visual da skin escolhida. Isso não substitui nem altera o cartão real da Apple Wallet e não modifica credenciais, NFC ou pagamentos.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -263,6 +314,57 @@ struct WalletArtLabTab: View {
                 }
             }
         }
+    }
+
+    private func saveMockupToPhotos(artwork: UIImage) {
+        let size = CGSize(width: 1200, height: 756)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { context in
+            let rect = CGRect(origin: .zero, size: size)
+            UIColor.black.setFill()
+            context.fill(rect)
+
+            let scale = max(size.width / artwork.size.width, size.height / artwork.size.height) * zoom
+            let drawSize = CGSize(width: artwork.size.width * scale, height: artwork.size.height * scale)
+            let origin = CGPoint(
+                x: (size.width - drawSize.width) / 2 + offsetX * 3,
+                y: (size.height - drawSize.height) / 2 + offsetY * 3
+            )
+            artwork.draw(in: CGRect(origin: origin, size: drawSize))
+
+            let gradient = CGGradient(
+                colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                colors: [UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.78).cgColor] as CFArray,
+                locations: [0.45, 1.0]
+            )
+            if let gradient {
+                context.cgContext.drawLinearGradient(
+                    gradient,
+                    start: CGPoint(x: size.width / 2, y: size.height * 0.35),
+                    end: CGPoint(x: size.width / 2, y: size.height),
+                    options: []
+                )
+            }
+
+            let title = cardName.isEmpty ? "Cartão personalizado" : cardName
+            let digits = lastFour.isEmpty ? "0000" : String(lastFour.suffix(4))
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .left
+            let titleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 42),
+                .foregroundColor: UIColor.white,
+                .paragraphStyle: paragraph
+            ]
+            let digitsAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedDigitSystemFont(ofSize: 30, weight: .medium),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.95),
+                .paragraphStyle: paragraph
+            ]
+            NSString(string: title).draw(in: CGRect(x: 54, y: size.height - 138, width: size.width - 108, height: 54), withAttributes: titleAttributes)
+            NSString(string: "•••• " + digits).draw(in: CGRect(x: 54, y: size.height - 82, width: size.width - 108, height: 40), withAttributes: digitsAttributes)
+        }
+
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
     }
 
     private func passTypeName(_ pass: PKPass) -> String {
