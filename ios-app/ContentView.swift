@@ -362,6 +362,10 @@ struct ContentView: View {
                 .tabItem { Label("Wallet Cards", systemImage: "creditcard.fill") }
                 .tag(AppTab.walletCards)
 
+            WalletArtLabTab()
+                .tabItem { Label("Art Lab", systemImage: "paintbrush.pointed.fill") }
+                .tag(AppTab.walletCards)
+
             PasscodeThemeTab()
                 .tabItem { Label("Passcode", systemImage: "lock.circle.fill") }
                 .tag(AppTab.passcodeThemes)
