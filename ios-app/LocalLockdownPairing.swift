@@ -62,14 +62,14 @@ final class LocalLockdownPairing: ObservableObject {
                 let result = try Self.perform(deviceIP: ip)
                 await MainActor.run {
                     self?.pairingFilePath = result.path
-                    self?.status = "✅ Lockdown pairing completed ((result.bytes) bytes)."
-                    self?.log.append("Pair record saved: (result.path)")
+                    self?.status = "✅ Lockdown pairing completed (\(result.bytes) bytes)."
+                    self?.log.append("Pair record saved: \(result.path)")
                     self?.running = false
                 }
             } catch {
                 await MainActor.run {
-                    self?.status = "❌ (error.localizedDescription)"
-                    self?.log.append("Failure: (error)")
+                    self?.status = "❌ \(error.localizedDescription)"
+                    self?.log.append("Failure: \(error)")
                     self?.running = false
                 }
             }
@@ -99,18 +99,22 @@ final class LocalLockdownPairing: ObservableObject {
         }
     }
 
-    nonisolated private static func ffiMessage(_ error: UnsafeMutablePointer<IdeviceFfiError>?,
-                                   fallback: String) -> String? {
+    nonisolated private static func ffiMessage(
+        _ error: UnsafeMutablePointer<IdeviceFfiError>?,
+        fallback: String
+    ) -> String? {
         guard let error else { return nil }
         let code = error.pointee.code
         let sub = error.pointee.sub_code
         let message = error.pointee.message.flatMap { String(validatingUTF8: $0) } ?? fallback
         idevice_error_free(error)
-        return "idevice FFI (code)/(sub): (message)"
+        return "idevice FFI \(code)/\(sub): \(message)"
     }
 
-    nonisolated private static func check(_ error: UnsafeMutablePointer<IdeviceFfiError>?,
-                              fallback: String) throws {
+    nonisolated private static func check(
+        _ error: UnsafeMutablePointer<IdeviceFfiError>?,
+        fallback: String
+    ) throws {
         if let message = ffiMessage(error, fallback: fallback) {
             throw PairError.ffi(message)
         }
@@ -137,7 +141,7 @@ final class LocalLockdownPairing: ObservableObject {
         address.sin_port = UInt16(62078).bigEndian
 
         guard host.withCString({ inet_pton(AF_INET, $0, &address.sin_addr) }) == 1 else {
-            throw PairError.ffi("Invalid IPv4 address: (host)")
+            throw PairError.ffi("Invalid IPv4 address: \(host)")
         }
 
         var device: UnsafeMutablePointer<IdeviceHandle>?
@@ -156,7 +160,7 @@ final class LocalLockdownPairing: ObservableObject {
 
         if let message = ffiMessage(
             connectError,
-            fallback: "Couldn't reach Lockdown at (host):62078"
+            fallback: "Couldn't reach Lockdown at \(host):62078"
         ) {
             throw PairError.ffi(message)
         }
