@@ -22,8 +22,6 @@ targets:
     platform: iOS
     sources:
       - path: ios-app
-        excludes:
-          - IssuerProvisioning/**
     dependencies:
       - target: AirCard-IssuerProvisioning
         embed: true
@@ -44,7 +42,7 @@ targets:
     type: app-extension
     platform: iOS
     sources:
-      - path: ios-app/IssuerProvisioning
+      - path: IssuerProvisioning
         excludes:
           - Info.plist
     settings:
