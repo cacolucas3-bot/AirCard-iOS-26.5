@@ -568,10 +568,10 @@ struct PairingTab: View {
                     .padding(.vertical, 2)
                 }
 
-                // Transport diagnostic: separate network reachability from pairing protocol.
+                // Transport diagnostics: compare classic Lockdown with Remote Pairing/RSD.
                 Section("LocalDevVPN TCP Diagnostic") {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Tests TCP reachability to 10.7.0.1:62078 using Network.framework. This does not perform pairing.")
+                        Text("Tests raw TCP reachability through LocalDevVPN. No pairing or exploit code is invoked.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -592,14 +592,29 @@ struct PairingTab: View {
                                     )
                             }
 
-                            Button {
-                                localVPNTCPProbe.test(host: vm.deviceIP)
-                            } label: {
-                                Label("Test TCP 62078", systemImage: "network")
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
+                            HStack(spacing: 10) {
+                                Button {
+                                    localVPNTCPProbe.test(host: vm.deviceIP, port: 62078)
+                                } label: {
+                                    Label("Test 62078", systemImage: "network")
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button {
+                                    localVPNTCPProbe.test(host: vm.deviceIP, port: 49152)
+                                } label: {
+                                    Label("Test 49152", systemImage: "point.3.connected.trianglepath.dotted")
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                }
+                                .buttonStyle(.bordered)
                             }
-                            .buttonStyle(.bordered)
+
+                            Text("62078 = classic Lockdown · 49152 = Remote Pairing/RSD baseline")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
 
                         if !localVPNTCPProbe.log.isEmpty {
