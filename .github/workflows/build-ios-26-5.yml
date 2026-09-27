@@ -1,6 +1,9 @@
 name: Build AirCard-iOS 26.5 Experimental
 
 on:
+  push:
+    branches:
+      - ios-26.5-experimental
   workflow_dispatch:
 
 jobs:
