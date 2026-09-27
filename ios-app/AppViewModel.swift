@@ -17,6 +17,7 @@ final class AppViewModel: ObservableObject {
     @Published var pairingPIN: String? = nil
     @Published var hasPairingFile: Bool = false
     @Published var pairingFileName: String = ""
+    @Published var pairingFileValidation: String = ""
     @Published var pairingPhase: PairingPhase = .idle
     @Published var documentsPlistFiles: [String] = []
 
@@ -209,6 +210,43 @@ final class AppViewModel: ObservableObject {
             errorMessage = "Failed to save pairing file: \(error.localizedDescription)"
             return false
         }
+    }
+
+    /// Validates the active pairing plist without exposing or logging private key material.
+    /// RPPairing files contain 32-byte Ed25519 public/private keys plus an identifier.
+    func validatePairingFile() {
+        let path = PairingController.pairingFilePath()
+        guard FileManager.default.fileExists(atPath: path),
+              let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              !data.isEmpty else {
+            pairingFileValidation = "❌ No pairing file is loaded."
+            return
+        }
+
+        guard let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+              let dict = plist as? [String: Any] else {
+            pairingFileValidation = "❌ The file is not a readable plist."
+            return
+        }
+
+        let publicKey = dict["public_key"] as? Data
+        let privateKey = dict["private_key"] as? Data
+        let identifier = dict["identifier"] as? String
+
+        if publicKey?.count == 32 && privateKey?.count == 32 && !(identifier?.isEmpty ?? true) {
+            let hasAltIRK = (dict["alt_irk"] as? Data)?.isEmpty == false
+            pairingFileValidation = hasAltIRK
+                ? "✅ RPPairing detected — Ed25519 keys + identifier + alt_irk."
+                : "✅ RPPairing detected — Ed25519 keys + identifier."
+            return
+        }
+
+        if dict["HostID"] != nil || dict["SystemBUID"] != nil || dict["DeviceCertificate"] != nil {
+            pairingFileValidation = "⚠️ Lockdown pairing file detected. iOS 26.x needs an RPPairing file for the LocalDevVPN/RSD path."
+            return
+        }
+
+        pairingFileValidation = "⚠️ Unknown pairing plist format. It does not match the RPPairing schema used by AirCard."
     }
 
     func selectPairingFile(filename: String) {
