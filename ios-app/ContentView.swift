@@ -521,6 +521,27 @@ struct PairingTab: View {
                                     vm.pairingFileValidation.contains("⚠️") ? .orange : .green
                                 )
                         }
+
+                        if !vm.documentsPlistFiles.isEmpty {
+                            Divider()
+                            Text("Pairing files already in AirCard Documents")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+
+                            ForEach(vm.documentsPlistFiles, id: \.self) { filename in
+                                Button {
+                                    vm.useDiscoveredPairingFile(filename: filename)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "doc.text")
+                                        Text(filename).lineLimit(1)
+                                        Spacer()
+                                        Image(systemName: "checkmark.circle")
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
                     }
                     .padding(.vertical, 2)
                 }
