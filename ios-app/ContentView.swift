@@ -531,8 +531,8 @@ struct PairingTab: View {
                             }
 
                         } else {
-                            if LocalLockdownPairing.shared.status != "idle" {
-                                Text(LocalLockdownPairing.shared.status)
+                            if localLockdownPairing.status != "idle" {
+                                Text(localLockdownPairing.status)
                                     .font(.caption.weight(.medium))
                                     .foregroundStyle(
                                         LocalLockdownPairing.shared.status.contains("✅") ? .green :
@@ -559,7 +559,7 @@ struct PairingTab: View {
                         }
 
                         if !localLockdownPairing.log.isEmpty {
-                            Text(LocalLockdownPairing.shared.log.joined(separator: "\n"))
+                            Text(localLockdownPairing.log.joined(separator: "\n"))
                                 .font(.system(size: 10, design: .monospaced))
                                 .foregroundStyle(.tertiary)
                         }
