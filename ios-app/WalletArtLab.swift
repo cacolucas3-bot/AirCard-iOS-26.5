@@ -179,11 +179,6 @@ struct WalletArtLabTab: View {
                 }
             }
             .navigationTitle("Wallet Art Lab")
-            .photosPicker(
-                isPresented: .constant(false),
-                selection: .constant(nil as PhotosPickerItem?),
-                matching: .images
-            )
             .onChange(of: selectedPhoto) { _, item in
                 guard let item else { return }
                 Task {
