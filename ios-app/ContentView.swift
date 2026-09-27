@@ -402,6 +402,7 @@ struct PairingTab: View {
     @State private var showDeleteConfirm = false
     @State private var showCredits = false
     @State private var showPairingFilePicker = false
+    @ObservedObject private var localLockdownPairing = LocalLockdownPairing.shared
 
     var body: some View {
         NavigationStack {
@@ -521,19 +522,14 @@ struct PairingTab: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
-                        if LocalLockdownPairing.shared.running {
+                        if localLockdownPairing.running {
                             HStack(spacing: 8) {
                                 ProgressView().scaleEffect(0.85)
-                                Text(LocalLockdownPairing.shared.status)
+                                Text(localLockdownPairing.status)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
 
-                            Button("Cancel / Stop") {
-                                LocalLockdownPairing.shared.stopUI()
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(.red)
                         } else {
                             if LocalLockdownPairing.shared.status != "idle" {
                                 Text(LocalLockdownPairing.shared.status)
@@ -545,7 +541,7 @@ struct PairingTab: View {
                             }
 
                             Button {
-                                LocalLockdownPairing.shared.start(deviceIP: vm.deviceIP)
+                                localLockdownPairing.start(deviceIP: vm.deviceIP)
                             } label: {
                                 Label("Try Local Lockdown Pairing", systemImage: "link.badge.plus")
                                     .frame(maxWidth: .infinity)
@@ -555,14 +551,14 @@ struct PairingTab: View {
                             .tint(.blue)
                         }
 
-                        if let path = LocalLockdownPairing.shared.pairingFilePath {
+                        if let path = localLockdownPairing.pairingFilePath {
                             Text(path)
                                 .font(.system(size: 10, design: .monospaced))
                                 .foregroundStyle(.tertiary)
                                 .lineLimit(2)
                         }
 
-                        if !LocalLockdownPairing.shared.log.isEmpty {
+                        if !localLockdownPairing.log.isEmpty {
                             Text(LocalLockdownPairing.shared.log.joined(separator: "\n"))
                                 .font(.system(size: 10, design: .monospaced))
                                 .foregroundStyle(.tertiary)
