@@ -20,9 +20,6 @@ final class PairingController: ObservableObject {
     @Published private(set) var running = false
     @Published var pairingStatus: String = "idle"
     @Published var pairingPIN: String? = nil
-    @Published var pairingDiagnostic: String? = nil
-
-    private var advertisedPort: Int32? = nil
 
     /// Path to the pairing file that was actively found or created.
     static var customPairingFilePath: String? = nil
@@ -163,26 +160,6 @@ final class PairingController: ObservableObject {
             keepAlive.startAudio()
             pairingStatus = "Broadcasting… open Settings to pair"
             runHost()
-        }
-    }
-
-    /// Probe the local RPPairing socket without completing pair-setup.
-    func diagnoseLocalRPPairing() {
-        guard let port = advertisedPort, port > 0 else {
-            pairingDiagnostic = "No local RPPairing listener is currently advertised."
-            return
-        }
-        pairingDiagnostic = "Testing local RPPairing on 127.0.0.1:\(port)…"
-        DispatchQueue.global(qos: .userInitiated).async {
-            var message: UnsafeMutablePointer<CChar>?
-            let rc = "127.0.0.1".withCString { hostC in
-                al_pairing_diagnose_local(hostC, UInt16(port), &message)
-            }
-            let text = message.flatMap { String(validatingUTF8: $0) } ?? "No diagnostic message"
-            if let message { al_string_free(message) }
-            DispatchQueue.main.async {
-                self.pairingDiagnostic = rc == 0 ? "✓ \(text)" : "✗ \(text)"
-            }
         }
     }
 
