@@ -24,6 +24,39 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+// MARK: - Generic document picker
+
+struct DocumentPickerView: UIViewControllerRepresentable {
+    let allowedContentTypes: [UTType]
+    let onPick: (URL) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onPick: onPick)
+    }
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedContentTypes, asCopy: true)
+        picker.allowsMultipleSelection = false
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPick: (URL) -> Void
+
+        init(onPick: @escaping (URL) -> Void) {
+            self.onPick = onPick
+        }
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else { return }
+            onPick(url)
+        }
+    }
+}
+
 // MARK: - Credits Sheet
 
 struct CreditsSheet: View {
@@ -401,6 +434,7 @@ struct PairingTab: View {
     @EnvironmentObject var vm: AppViewModel
     @State private var showDeleteConfirm = false
     @State private var showCredits = false
+    @State private var showPairingFilePicker = false
 
     var body: some View {
         NavigationStack {
@@ -477,6 +511,40 @@ struct PairingTab: View {
                     Button("Cancel", role: .cancel) {}
                 } message: {
                     Text("The active pairing credentials will be removed.")
+                }
+
+                // Import an existing RPPairing/Remote Pairing file.
+                // iOS 26.x cannot rely on device-initiated Wi-Fi onboarding, so this
+                // provides the normal document-import path without adding new FFI.
+                Section("Pairing File") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Import an existing RPPairing / Remote Pairing file.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Button {
+                            showPairingFilePicker = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "doc.badge.plus")
+                                Text("Import Pairing File")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding(.vertical, 2)
+                }
+                .sheet(isPresented: $showPairingFilePicker) {
+                    DocumentPickerView(allowedContentTypes: [.propertyList, .data]) { url in
+                        let ok = vm.importPairingFile(from: url, originalName: url.lastPathComponent)
+                        if !ok {
+                            vm.errorMessage = "Could not import the selected pairing file."
+                        }
+                        showPairingFilePicker = false
+                    }
                 }
 
                 // On-Device Pairing Section (available for all iOS versions)
