@@ -541,6 +541,15 @@ struct PairingTab: View {
                                 }
                                 .buttonStyle(.borderless)
                             }
+                        } else {
+                            Divider()
+                            Label("No pairing file found in AirCard Documents.", systemImage: "doc.badge.ellipsis")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+
+                            Text("On iOS 26.x, the normal path is to import an existing RPPairing file. The current device-side Wi‑Fi pairing flow is documented for iOS 27+.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .padding(.vertical, 2)
@@ -665,8 +674,19 @@ struct PairingTab: View {
                     .padding(.vertical, 2)
                 }
 
-                // On-Device Pairing Section (available for all iOS versions)
+                // Device-side pairing host. Current idevice_pair documentation
+                // describes iPhone/iPad wireless onboarding for iOS 27+.
                 Section("Pair on This iPhone") {
+                    if ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 27 {
+                        Label("iOS 26.x: import an RPPairing file for the normal pairing path.", systemImage: "info.circle")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+
+                        Text("The button below is retained only as an experimental compatibility test; it may remain on “Advertising” on iOS 26.x.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
                     if vm.pairingPhase == .pairing {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 8) {
