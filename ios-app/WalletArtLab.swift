@@ -12,6 +12,7 @@ final class WalletArtInspector: ObservableObject {
     @Published private(set) var lastInspection = ""
     @Published private(set) var diagnostics: [String] = []
     @Published private(set) var advancedDiagnostics: [String] = []
+    @Published private(set) var issuerDiagnostics: [String] = []
 
     func inspect() {
         let library = PKPassLibrary()
@@ -62,12 +63,24 @@ final class WalletArtInspector: ObservableObject {
     }
 
 
+    func inspectIssuerProvisioningAPI() {
+        issuerDiagnostics = [
+            "PKIssuerProvisioningExtensionHandler: disponível no SDK",
+            "PKIssuerProvisioningExtensionPaymentPassEntry: disponível no SDK",
+            "PKIssuerProvisioningExtensionPassEntry.art: disponível no SDK",
+            "art é definido pela Apple para um cartão disponível para adicionar/selecionar no Wallet.",
+            "Provisioning de cartão exige entitlement de emissor concedido pela Apple.",
+            "Conclusão: a API existe, mas não autoriza alterar a arte de um cartão bancário já provisionado neste app."
+        ]
+    }
+
     func clear() {
         passes = []
         status = "Not inspected"
         lastInspection = ""
         diagnostics = []
         advancedDiagnostics = []
+        issuerDiagnostics = []
     }
 }
 
@@ -179,6 +192,28 @@ struct WalletArtLabTab: View {
                     if !inspector.advancedDiagnostics.isEmpty {
                         VStack(alignment: .leading, spacing: 5) {
                             ForEach(inspector.advancedDiagnostics, id: \.self) { line in
+                                Text(line)
+                                    .font(.caption2.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section("1.2. Investigação — Issuer Provisioning") {
+                    Button {
+                        inspector.inspectIssuerProvisioningAPI()
+                    } label: {
+                        Label("Testar API de arte do emissor", systemImage: "rectangle.and.pencil.and.ellipsis")
+                    }
+
+                    Text("Teste somente documental/SDK. Não tenta provisionar, substituir ou modificar nenhum cartão real.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if !inspector.issuerDiagnostics.isEmpty {
+                        VStack(alignment: .leading, spacing: 5) {
+                            ForEach(inspector.issuerDiagnostics, id: \.self) { line in
                                 Text(line)
                                     .font(.caption2.monospaced())
                                     .foregroundStyle(.secondary)
