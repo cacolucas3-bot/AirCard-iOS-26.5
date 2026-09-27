@@ -12,6 +12,54 @@
 extern "C" {
 #endif
 
+
+// ---------------------------------------------------------------------------
+// Existing idevice-ffi pairing symbols (used for the iOS 26.x fallback)
+// ---------------------------------------------------------------------------
+//
+// These symbols are already linked by AirliftFFI's vendored idevice-ffi.
+// They are declared here so Swift can use the existing implementation without
+// introducing a second Rust FFI layer.
+
+typedef struct IdeviceHandle IdeviceHandle;
+typedef struct LockdowndClientHandle LockdowndClientHandle;
+typedef struct IdevicePairingFile IdevicePairingFile;
+
+typedef struct IdeviceFfiError {
+    int32_t code;
+    int32_t sub_code;
+    const char *message;
+} IdeviceFfiError;
+
+struct sockaddr;
+
+IdeviceFfiError *idevice_new_tcp_socket(const struct sockaddr *addr,
+                                        uint32_t addr_len,
+                                        const char *label,
+                                        IdeviceHandle **idevice);
+
+IdeviceFfiError *lockdownd_new(IdeviceHandle *socket,
+                               LockdowndClientHandle **client);
+
+void lockdownd_client_free(LockdowndClientHandle *handle);
+
+IdeviceFfiError *lockdownd_pair(LockdowndClientHandle *client,
+                                const char *host_id,
+                                const char *system_buid,
+                                const char *host_name,
+                                IdevicePairingFile **pairing_file);
+
+void idevice_pairing_file_free(IdevicePairingFile *pairing_file);
+
+IdeviceFfiError *idevice_pairing_file_serialize(const IdevicePairingFile *pairing_file,
+                                                uint8_t **data,
+                                                uintptr_t *length);
+
+void idevice_data_free(uint8_t *data, uintptr_t length);
+
+void idevice_error_free(IdeviceFfiError *error);
+
+
 // ---------------------------------------------------------------------------
 // Logging
 // ---------------------------------------------------------------------------
