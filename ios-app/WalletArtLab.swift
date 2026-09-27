@@ -363,7 +363,7 @@ struct WalletArtLabTab: View {
             let drawSize = CGSize(width: artwork.size.width * scale, height: artwork.size.height * scale)
             let origin = CGPoint(
                 x: (size.width - drawSize.width) / CGFloat(2) + offsetX * 3,
-                y: (size.height - drawSize.height) / 2 + offsetY * 3
+                y: (size.height - drawSize.height) / CGFloat(2) + offsetY * 3
             )
             artwork.draw(in: CGRect(origin: origin, size: drawSize))
 
