@@ -503,6 +503,24 @@ struct PairingTab: View {
                             .frame(height: 44)
                         }
                         .buttonStyle(.bordered)
+
+                        Button {
+                            vm.validatePairingFile()
+                        } label: {
+                            Label("Validate Pairing File", systemImage: "checkmark.shield")
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 40)
+                        }
+                        .buttonStyle(.bordered)
+
+                        if !vm.pairingFileValidation.isEmpty {
+                            Text(vm.pairingFileValidation)
+                                .font(.caption)
+                                .foregroundStyle(
+                                    vm.pairingFileValidation.contains("❌") ? .red :
+                                    vm.pairingFileValidation.contains("⚠️") ? .orange : .green
+                                )
+                        }
                     }
                     .padding(.vertical, 2)
                 }
