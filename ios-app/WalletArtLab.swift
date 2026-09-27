@@ -11,6 +11,7 @@ final class WalletArtInspector: ObservableObject {
     @Published private(set) var status = "Not inspected"
     @Published private(set) var lastInspection = ""
     @Published private(set) var diagnostics: [String] = []
+    @Published private(set) var advancedDiagnostics: [String] = []
 
     func inspect() {
         let library = PKPassLibrary()
@@ -36,11 +37,48 @@ final class WalletArtInspector: ObservableObject {
         }
     }
 
+    func runAdvancedDiagnostics() {
+        let library = PKPassLibrary()
+        let libraryAvailable = PKPassLibrary.isPassLibraryAvailable()
+        let activationAvailable = library.isSecureElementPassActivationAvailable
+        let backgroundAddPasses = library.authorizationStatus(for: .backgroundAddPasses)
+        let found = library.passes()
+        let secure = library.passes(of: .secureElement)
+        let legacyPayment = library.passes(of: .payment)
+        let remoteSecure = library.remoteSecureElementPasses
+
+        advancedDiagnostics = [
+            "Pass Library disponível: \(yesNo(libraryAvailable))",
+            "Secure Element activation disponível: \(yesNo(activationAvailable))",
+            "Autorização backgroundAddPasses: \(authorizationName(backgroundAddPasses))",
+            "passes(): \(found.count)",
+            "passes(.secureElement): \(secure.count)",
+            "passes(.payment): \(legacyPayment.count)",
+            "remoteSecureElementPasses: \(remoteSecure.count)",
+            "Observação: zero passes aqui significa apenas zero passes acessíveis a este app pelas APIs públicas; não significa Wallet vazia."
+        ]
+    }
+
+    private func yesNo(_ value: Bool) -> String {
+        value ? "SIM" : "NÃO"
+    }
+
+    private func authorizationName(_ status: PKPassLibrary.AuthorizationStatus) -> String {
+        switch status {
+        case .authorized: return "authorized"
+        case .denied: return "denied"
+        case .notDetermined: return "notDetermined"
+        case .restricted: return "restricted"
+        @unknown default: return "unknown"
+        }
+    }
+
     func clear() {
         passes = []
         status = "Not inspected"
         lastInspection = ""
         diagnostics = []
+        advancedDiagnostics = []
     }
 }
 
@@ -129,6 +167,28 @@ struct WalletArtLabTab: View {
                                 }
                             }
                             .padding(.vertical, 3)
+                        }
+                    }
+                }
+
+                Section("1.1. Diagnóstico avançado — APIs públicas") {
+                    Button {
+                        inspector.runAdvancedDiagnostics()
+                    } label: {
+                        Label("Executar diagnóstico avançado", systemImage: "stethoscope")
+                    }
+
+                    Text("Este teste consulta somente APIs públicas/documentadas do PassKit. Ele não solicita, altera ou substitui cartões e não toca em credenciais de pagamento.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if !inspector.advancedDiagnostics.isEmpty {
+                        VStack(alignment: .leading, spacing: 5) {
+                            ForEach(inspector.advancedDiagnostics, id: \.self) { line in
+                                Text(line)
+                                    .font(.caption2.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
