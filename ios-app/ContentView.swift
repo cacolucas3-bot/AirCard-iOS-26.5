@@ -514,6 +514,63 @@ struct PairingTab: View {
                     }
                 }
 
+                // iOS 26.x fallback: direct Lockdown pairing over LocalDevVPN.
+                Section("iOS 26.x Pairing Fallback") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Tests the classic Lockdown pairing path directly through LocalDevVPN. Unlock the iPhone and approve Trust if iOS asks.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        if LocalLockdownPairing.shared.running {
+                            HStack(spacing: 8) {
+                                ProgressView().scaleEffect(0.85)
+                                Text(LocalLockdownPairing.shared.status)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Button("Cancel / Stop") {
+                                LocalLockdownPairing.shared.stopUI()
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+                        } else {
+                            if LocalLockdownPairing.shared.status != "idle" {
+                                Text(LocalLockdownPairing.shared.status)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(
+                                        LocalLockdownPairing.shared.status.contains("✅") ? .green :
+                                        LocalLockdownPairing.shared.status.contains("❌") ? .red : .secondary
+                                    )
+                            }
+
+                            Button {
+                                LocalLockdownPairing.shared.start(deviceIP: vm.deviceIP)
+                            } label: {
+                                Label("Try Local Lockdown Pairing", systemImage: "link.badge.plus")
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                        }
+
+                        if let path = LocalLockdownPairing.shared.pairingFilePath {
+                            Text(path)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(2)
+                        }
+
+                        if !LocalLockdownPairing.shared.log.isEmpty {
+                            Text(LocalLockdownPairing.shared.log.joined(separator: "\n"))
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+
                 // On-Device Pairing Section (available for all iOS versions)
                 Section("Pair on This iPhone") {
                     if vm.pairingPhase == .pairing {
