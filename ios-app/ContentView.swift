@@ -533,6 +533,21 @@ struct PairingTab: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                             }
 
+                            Button {
+                                PairingController.shared.diagnoseLocalRPPairing()
+                            } label: {
+                                Label("Testar RPPairing local", systemImage: "stethoscope")
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                            }
+                            .buttonStyle(.bordered)
+
+                            if let diagnostic = PairingController.shared.pairingDiagnostic {
+                                Text(diagnostic)
+                                    .font(.caption2.monospaced())
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+
                             Button(role: .cancel) {
                                 vm.cancelPairing()
                             } label: {
