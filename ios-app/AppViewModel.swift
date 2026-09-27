@@ -256,9 +256,33 @@ final class AppViewModel: ObservableObject {
         let exists = FileManager.default.fileExists(atPath: canonical)
         hasPairingFile = exists
         pairingFileName = exists ? (canonical as NSString).lastPathComponent : ""
+        pairingFileValidation = ""
         scanDocumentsDirectory()
     }
 
+    /// Activates a pairing plist already copied into AirCard Documents.
+    /// This never fabricates keys or accesses another app sandbox.
+    func useDiscoveredPairingFile(filename: String) {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let source = docs.appendingPathComponent(filename)
+        guard FileManager.default.fileExists(atPath: source.path) else {
+            pairingFileValidation = "❌ File no longer exists in AirCard Documents."
+            scanDocumentsDirectory()
+            return
+        }
+
+        let canonical = PairingController.syncCanonicalPairingFile(from: source.path)
+        guard FileManager.default.fileExists(atPath: canonical) else {
+            pairingFileValidation = "❌ Could not activate the selected pairing file."
+            return
+        }
+
+        hasPairingFile = true
+        pairingFileName = (canonical as NSString).lastPathComponent
+        pairingStatus = "Pairing file selected: " + filename
+        validatePairingFile()
+        scanDocumentsDirectory()
+    }
     // MARK: - Pairing File
 
     func refreshPairingFile() {
