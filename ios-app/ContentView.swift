@@ -403,6 +403,7 @@ struct PairingTab: View {
     @State private var showCredits = false
     @State private var showPairingFilePicker = false
     @ObservedObject private var localLockdownPairing = LocalLockdownPairing.shared
+    @ObservedObject private var localVPNTCPProbe = LocalVPNTCPProbe.shared
 
     var body: some View {
         NavigationStack {
@@ -560,6 +561,49 @@ struct PairingTab: View {
 
                         if !localLockdownPairing.log.isEmpty {
                             Text(localLockdownPairing.log.joined(separator: "\n"))
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                // Transport diagnostic: separate network reachability from pairing protocol.
+                Section("LocalDevVPN TCP Diagnostic") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Tests TCP reachability to 10.7.0.1:62078 using Network.framework. This does not perform pairing.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        if localVPNTCPProbe.running {
+                            HStack(spacing: 8) {
+                                ProgressView().scaleEffect(0.85)
+                                Text(localVPNTCPProbe.status)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            if localVPNTCPProbe.status != "idle" {
+                                Text(localVPNTCPProbe.status)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(
+                                        localVPNTCPProbe.status.contains("✅") ? .green :
+                                        localVPNTCPProbe.status.contains("❌") ? .red : .secondary
+                                    )
+                            }
+
+                            Button {
+                                localVPNTCPProbe.test(host: vm.deviceIP)
+                            } label: {
+                                Label("Test TCP 62078", systemImage: "network")
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+
+                        if !localVPNTCPProbe.log.isEmpty {
+                            Text(localVPNTCPProbe.log.joined(separator: "\n"))
                                 .font(.system(size: 10, design: .monospaced))
                                 .foregroundStyle(.tertiary)
                         }
