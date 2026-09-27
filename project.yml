@@ -24,7 +24,7 @@ targets:
       - path: ios-app
     dependencies:
       - target: AirCard-IssuerProvisioning
-        embed: true
+        embed: false
         codeSign: false
       - framework: AirliftFFI.xcframework
         embed: false
