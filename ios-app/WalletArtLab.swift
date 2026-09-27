@@ -41,7 +41,6 @@ final class WalletArtInspector: ObservableObject {
         let library = PKPassLibrary()
         let libraryAvailable = PKPassLibrary.isPassLibraryAvailable()
         let activationAvailable = library.isSecureElementPassActivationAvailable
-        let backgroundAddPasses = library.authorizationStatus(for: .backgroundAddPasses)
         let found = library.passes()
         let secure = library.passes(of: .secureElement)
         let legacyPayment = library.passes(of: .payment)
@@ -50,7 +49,6 @@ final class WalletArtInspector: ObservableObject {
         advancedDiagnostics = [
             "Pass Library disponível: \(yesNo(libraryAvailable))",
             "Secure Element activation disponível: \(yesNo(activationAvailable))",
-            "Autorização backgroundAddPasses: \(authorizationName(backgroundAddPasses))",
             "passes(): \(found.count)",
             "passes(.secureElement): \(secure.count)",
             "passes(.payment): \(legacyPayment.count)",
@@ -63,15 +61,6 @@ final class WalletArtInspector: ObservableObject {
         value ? "SIM" : "NÃO"
     }
 
-    private func authorizationName(_ status: PKPassLibrary.AuthorizationStatus) -> String {
-        switch status {
-        case .authorized: return "authorized"
-        case .denied: return "denied"
-        case .notDetermined: return "notDetermined"
-        case .restricted: return "restricted"
-        @unknown default: return "unknown"
-        }
-    }
 
     func clear() {
         passes = []
