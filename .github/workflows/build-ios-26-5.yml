@@ -1,0 +1,32 @@
+name: Build AirCard-iOS 26.5 Experimental
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build unsigned IPA
+        run: ./build-ipa.sh Release
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: AirCard-iOS-26.5-unsigned
+          path: build/AirCard-iOS.ipa
+          if-no-files-found: error
