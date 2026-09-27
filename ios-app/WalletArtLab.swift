@@ -198,12 +198,8 @@ struct WalletArtLabTab: View {
         switch pass.passType {
         case .secureElement: return "secureElement"
         case .barcode: return "barcode"
-        case .payment: return "payment"
-        case .boardingPass: return "boardingPass"
-        case .coupon: return "coupon"
-        case .storeCard: return "storeCard"
-        case .generic: return "generic"
-        @unknown default: return "unknown"
+        case .payment: return "payment (deprecated)"
+        default: return "other/unknown"
         }
     }
 }
