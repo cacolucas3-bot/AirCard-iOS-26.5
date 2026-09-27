@@ -10,18 +10,29 @@ final class WalletArtInspector: ObservableObject {
     @Published private(set) var passes: [PKPass] = []
     @Published private(set) var status = "Not inspected"
     @Published private(set) var lastInspection = ""
+    @Published private(set) var diagnostics: [String] = []
 
     func inspect() {
         let library = PKPassLibrary()
         let found = library.passes()
+        let secure = library.passes(of: .secureElement)
+        let legacyPayment = library.passes(of: .payment)
+        let remoteSecure = library.remoteSecureElementPasses
+
         passes = found
         lastInspection = Date().formatted(date: .abbreviated, time: .standard)
+        diagnostics = [
+            "Passes acessíveis por passes(): \(found.count)",
+            "Secure Element acessível: \(secure.count)",
+            "Payment pass (API legada): \(legacyPayment.count)",
+            "Secure Element em dispositivos pareados: \(remoteSecure.count)"
+        ]
 
-        let secure = found.filter { $0.secureElementPass != nil || $0.passType == .secureElement }
-        if secure.isEmpty {
-            status = "No secure-element/payment passes were exposed to this app."
+        let exposedSecure = secure.count + legacyPayment.count
+        if exposedSecure == 0 {
+            status = "Nenhum cartão de pagamento/Secure Element foi exposto a este app pelo PassKit."
         } else {
-            status = "(secure.count) secure-element/payment pass(es) exposed for metadata inspection."
+            status = "\(exposedSecure) pass(es) de pagamento exposto(s) para inspeção de metadados."
         }
     }
 
@@ -29,6 +40,7 @@ final class WalletArtInspector: ObservableObject {
         passes = []
         status = "Not inspected"
         lastInspection = ""
+        diagnostics = []
     }
 }
 
@@ -66,13 +78,23 @@ struct WalletArtLabTab: View {
                     }
 
                     if !inspector.lastInspection.isEmpty {
-                        Text("Última leitura: (inspector.lastInspection)")
+                        Text("Última leitura: \(inspector.lastInspection)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
 
+                    if !inspector.diagnostics.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(inspector.diagnostics, id: \.self) { line in
+                                Text(line)
+                                    .font(.caption2.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     if inspector.passes.isEmpty {
-                        Text("Nenhum pass exposto pela API foi listado ainda.")
+                        Text("Nenhum pass comum foi exposto pela API. Isso não significa que a Wallet esteja vazia; significa que este app não recebeu acesso a esses passes.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
@@ -96,7 +118,7 @@ struct WalletArtLabTab: View {
                                     Spacer()
                                 }
 
-                                Text("Tipo: (passTypeName(pass))")
+                                Text("Tipo: \(passTypeName(pass))")
                                     .font(.caption2.monospaced())
                                     .foregroundStyle(.secondary)
 
@@ -159,11 +181,11 @@ struct WalletArtLabTab: View {
                 }
 
                 Section("3. Resultado desta investigação") {
-                    Label("A API pública permite ler/representar passes, mas não oferece um setter para substituir a arte de um payment/secure-element pass existente.", systemImage: "info.circle")
+                    Label("O teste confirmou o limite de acesso: este app não recebeu os cartões de pagamento reais pela API pública do PassKit.", systemImage: "info.circle")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Text("Por isso estamos separando o problema em duas partes: descobrir exatamente o que o iOS expõe sobre o cartão real e, paralelamente, construir o editor de skins que você quer.")
+                    Text("A próxima etapa é investigar apenas interfaces públicas e entitlements documentados. Em paralelo, o editor de skins continua funcionando como preview sem tocar em credenciais, NFC ou pagamentos.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
