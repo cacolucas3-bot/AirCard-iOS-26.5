@@ -51,6 +51,7 @@ struct CardItem: Identifiable, Equatable {
 enum AppTab: String, CaseIterable, Identifiable {
     case pairing = "Pairing"
     case walletCards = "Wallet Cards"
+    case walletArtLab = "Art Lab"
     case passcodeThemes = "Passcode"
     case wallpapers = "Wallpapers"
     var id: String { rawValue }
