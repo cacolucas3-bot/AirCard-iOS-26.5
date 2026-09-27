@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - ios-26.5-experimental
+      - wallet-art-investigation
   workflow_dispatch:
 
 jobs:
