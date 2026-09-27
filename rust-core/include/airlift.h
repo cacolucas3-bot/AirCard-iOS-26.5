@@ -71,9 +71,6 @@ int32_t al_pairing_run_host(const char *bind_addr,
 // Free the heap strings inside an ALPairResult.
 void al_pairing_result_free(ALPairResult *r);
 
-// Probe the local RPPairing listener without performing pair-setup.
-int32_t al_pairing_diagnose_local(const char *host, uint16_t port, char **out_message);
-
 // ---------------------------------------------------------------------------
 // Exploit
 // ---------------------------------------------------------------------------
